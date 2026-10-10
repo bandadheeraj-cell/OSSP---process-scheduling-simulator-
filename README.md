@@ -70,26 +70,26 @@ Users can execute Linux commands, set up multi-stage pipelines (`cmd1 | cmd2 | c
 
 ```mermaid
 flowchart TD
-    User([User Terminal / CLI]) <--> REPL[Shell REPL Interface: pssim_shell.c]
+    User(["User Terminal / CLI"]) <--> REPL["Shell REPL Interface: pssim_shell.c"]
     
-    subgraph System Software Layer
-        REPL --> Parser[Lexer & Parser Engine: pssim_parser.c]
-        Parser --> Dispatcher{Command Classifier}
+    subgraph SysSoftware["System Software Layer"]
+        REPL --> Parser["Lexer & Parser Engine: pssim_parser.c"]
+        Parser --> Dispatcher{"Command Classifier"}
         
-        Dispatcher -->|Built-in Command| Builtins[Shell Built-ins Module: pssim_builtins.c]
-        Dispatcher -->|Simulator Command| SchedEngine[Process Scheduler Engine: pssim_scheduler.c]
-        Dispatcher -->|External Program| ProcExec[Process Control Engine: pssim_proc.c]
-        Dispatcher -->|Pipeline Pipeline | PipeExec[IPC Pipeline Engine: pssim_pipes.c]
+        Dispatcher -->|Built-in Command| Builtins["Shell Built-ins Module: pssim_builtins.c"]
+        Dispatcher -->|Simulator Command| SchedEngine["Process Scheduler Engine: pssim_scheduler.c"]
+        Dispatcher -->|External Program| ProcExec["Process Control Engine: pssim_proc.c"]
+        Dispatcher -->|Pipeline Command| PipeExec["IPC Pipeline Engine: pssim_pipes.c"]
     end
     
-    subgraph Kernel & Hardware Services
-        ProcExec -->|fork / execvp / waitpid| LinuxKernel[Linux Kernel Services]
+    subgraph KernelServices["Kernel & Hardware Services"]
+        ProcExec -->|fork / execvp / waitpid| LinuxKernel["Linux Kernel Services"]
         PipeExec -->|pipe / dup2| LinuxKernel
         Builtins -->|open / close / chdir| LinuxKernel
     end
     
-    subgraph Concurrency & Telemetry
-        MonitorThread[Background Monitor Thread: pssim_threads.c] <-->|pthread_mutex_t| Telemetry[(System Telemetry Metrics)]
+    subgraph TelemetrySub["Concurrency & Telemetry"]
+        MonitorThread["Background Monitor Thread: pssim_threads.c"] <-->|pthread_mutex_t| Telemetry[(System Telemetry Metrics)]
         ProcExec -.->|Telemetry Update| Telemetry
         SchedEngine -.->|Telemetry Update| Telemetry
     end
@@ -108,7 +108,7 @@ sequenceDiagram
     participant Redirect as I/O Redirection
     participant OS as Linux Kernel / Exec Engine
     
-    User->>REPL: Types Input Command (e.g., "ls -l | grep .c > out.txt")
+    User->>REPL: Types Input Command (e.g. ls -l | grep .c > out.txt)
     REPL->>Parser: pssim_read_line() & pssim_parse_pipeline()
     Parser-->>REPL: Returns Tokenized Pipeline Struct
     alt Is Built-in / Simulator Command
@@ -120,7 +120,7 @@ sequenceDiagram
         OS->>OS: Execute Program Binary execvp()
         OS-->>REPL: Synchronize Child Termination waitpid()
     end
-    REPL-->>User: Render Output & Prompt [ps_shell: /path]$
+    REPL-->>User: Render Output and Prompt (ps_shell: /path)
 ```
 
 ---
@@ -130,12 +130,12 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> NEW: sched-add / Process Creation
-    NEW --> READY: Arrival Time Met (T_current >= T_arrival)
-    READY --> RUNNING: Scheduler Dispatch (CPU Allocation)
-    RUNNING --> READY: Time Quantum Expired (RR) / Preempted (SRTF / Priority_P)
+    NEW --> READY: Arrival Time Met
+    READY --> RUNNING: Scheduler Dispatch
+    RUNNING --> READY: Time Quantum Expired / Preempted
     RUNNING --> WAITING: I/O or Synchronization Wait
     WAITING --> READY: I/O Complete / Event Unblocked
-    RUNNING --> TERMINATED: Execution Finished (Remaining Time = 0)
+    RUNNING --> TERMINATED: Execution Finished
     TERMINATED --> [*]: PCB Cleanup & Metrics Logging
 ```
 
@@ -145,13 +145,13 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-    Arrival[New Process Arrival] --> Q0["Queue 0: Round Robin (Q = 2 ticks)\n[Highest Priority]"]
+    Arrival["New Process Arrival"] --> Q0["Queue 0: Round Robin (Q = 2 ticks)<br>[Highest Priority]"]
     
-    Q0 -->|Finished in 2 ticks| Done[Terminated Process]
-    Q0 -->|Quantum Expired| Q1["Queue 1: Round Robin (Q = 4 ticks)\n[Medium Priority]"]
+    Q0 -->|Finished in 2 ticks| Done["Terminated Process"]
+    Q0 -->|Quantum Expired| Q1["Queue 1: Round Robin (Q = 4 ticks)<br>[Medium Priority]"]
     
     Q1 -->|Finished in 4 ticks| Done
-    Q1 -->|Quantum Expired| Q2["Queue 2: FCFS\n[Lowest Priority]"]
+    Q1 -->|Quantum Expired| Q2["Queue 2: FCFS<br>[Lowest Priority]"]
     
     Q2 -->|Executed to completion| Done
     
@@ -165,20 +165,28 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    MainThread[Main Execution Thread] -->|pthread_create| BgThread[Background Telemetry Thread]
+    MainThread["Main Execution Thread"] -->|pthread_create| BgThread["Background Telemetry Thread"]
     
-    subgraph Shared Telemetry Data Structure
-        Mutex[pthread_mutex_t lock]
-        Counter1[Total Commands Executed]
-        Counter2[Total Scheduled Workloads]
-        Counter3[Active Background Jobs]
-        Counter4[CPU Monitor Ticks]
+    subgraph SharedStruct["Shared Telemetry Data Structure"]
+        Mutex["pthread_mutex_t lock"]
+        Counter1["Total Commands Executed"]
+        Counter2["Total Scheduled Workloads"]
+        Counter3["Active Background Jobs"]
+        Counter4["CPU Monitor Ticks"]
     end
     
     MainThread -->|Acquire Lock| Mutex
     BgThread -->|Acquire Lock & Tick Every 1s| Mutex
-    Mutex -->|Update Telemetry State| Shared Telemetry Data Structure
+    Mutex -->|Update Telemetry State| SharedStruct
 ```
+
+---
+
+> [!NOTE]
+> **Option to Add Screenshots or Diagram Images to README**:  
+> If you wish to display custom exported image files (PNG, SVG, JPG) instead of or alongside the text-rendered Mermaid diagrams in `README.md`, you can place your image files in `docs/images/` and reference them using standard Markdown image syntax:  
+> `![High-Level System Architecture](docs/images/architecture_diagram.png)`  
+> `![Process Scheduling State Machine](docs/images/state_machine.png)`
 
 ---
 
