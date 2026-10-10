@@ -1,0 +1,14 @@
+# Build artifacts
+*.o
+ps_shell_sim
+test_pssim
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Test output
+output.txt
+*.log

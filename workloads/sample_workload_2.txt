@@ -1,0 +1,7 @@
+# Process Workload 2: CPU Bound vs I/O Burst Simulation
+# Format: Name Arrival_Time Burst_Time Priority
+P1 0 10 2
+P2 2 1 1
+P3 3 2 3
+P4 5 1 1
+P5 6 5 2
